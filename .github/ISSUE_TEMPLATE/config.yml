@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/BodhiProtocol/flashcard-app/discussions
+    about: Ask questions and share ideas
+  - name: 📖 Documentation
+    url: https://github.com/BodhiProtocol/flashcard-app#readme
+    about: Read the comprehensive README
+  - name: 🤝 Contributing
+    url: https://github.com/BodhiProtocol/flashcard-app/blob/main/CONTRIBUTING.md
+    about: Learn how to contribute
