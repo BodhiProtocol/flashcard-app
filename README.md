@@ -18,7 +18,7 @@ A minimalistic, web-based flashcard application with spaced repetition learning.
    git clone https://github.com/BodhiProtocol/flashcard-app.git
    ```
 
-2. **Open `anki.html` in your browser**
+2. **Open `capitals-quiz.html` in your browser**
    - Double-click the file, or
    - Right-click → Open with → Your favorite browser
 
