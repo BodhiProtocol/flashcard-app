@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #222;
+        }
+
+        .deck-list {
+            display: none;
+        }
+
+        .deck-list.active {
+            display: block;
+        }
+
+        .study-view {
+            display: none;
+        }
+
+        .study-view.active {
+            display: block;
+        }
+
+        .deck-item {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .deck-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .deck-name {
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 8px;
+        }
+
+        .deck-stats {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .card.flipped {
+            background: #f0f0f0;
+        }
+
+        .card-content {
+            font-size: 24px;
+            font-weight: 500;
+            color: #222;
+            line-height: 1.6;
+        }
+
+        .card-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007AFF;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0051D5;
+        }
+
+        .btn-success {
+            background: #34C759;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #30B050;
+        }
+
+        .btn-warning {
+            background: #FF9500;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #E68900;
+        }
+
+        .btn-danger {
+            background: #FF3B30;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #E60000;
+        }
+
+        .btn-secondary {
+            background: #E5E5EA;
+            color: #222;
+        }
+
+        .btn-secondary:hover {
+            background: #D1D1D6;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        input[type="text"], textarea {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .progress {
+            background: #E5E5EA;
+            height: 4px;
+            border-radius: 2px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #007AFF;
+            transition: width 0.3s;
+        }
+
+        .stats {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin: 20px 0;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Flashcards</h1>
+        </header>
+
+        <!-- Deck List View -->
+        <div class="deck-list active">
+            <div class="toolbar">
+                <button class="btn-primary" onclick="showNewDeckModal()">+ New Deck</button>
+            </div>
+            <div id="decks"></div>
+        </div>
+
+        <!-- Study View -->
+        <div class="study-view">
+            <div class="toolbar">
+                <button class="btn-secondary" onclick="backToDeckList()">← Back</button>
+                <button class="btn-secondary" onclick="showNewCardModal()">+ Add Card</button>
+            </div>
+
+            <div class="stats">
+                <span id="deckTitle" style="font-weight: 600; font-size: 16px;"></span>
+                <div style="margin-top: 10px;">
+                    <span id="cardCount">0 cards</span> •
+                    <span id="dueCount">0 due</span>
+                </div>
+            </div>
+
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div id="studyContent"></div>
+        </div>
+    </div>
+
+    <!-- New Deck Modal -->
+    <div class="modal" id="newDeckModal">
+        <div class="modal-content">
+            <h2>New Deck</h2>
+            <div class="input-group" style="flex-direction: column; gap: 10px;">
+                <input type="text" id="deckNameInput" placeholder="Deck name" autofocus>
+                <button class="btn-primary" onclick="createDeck()">Create</button>
+                <button class="btn-secondary" onclick="closeModal('newDeckModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Card Modal -->
+    <div class="modal" id="newCardModal">
+        <div class="modal-content">
+            <h2>New Card</h2>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <textarea id="frontInput" placeholder="Front (question)"></textarea>
+                <textarea id="backInput" placeholder="Back (answer)"></textarea>
+                <button class="btn-primary" onclick="addCard()">Add</button>
+                <button class="btn-secondary" onclick="closeModal('newCardModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            decks: {},
+            currentDeck: null,
+            currentCardIndex: 0,
+
+            init() {
+                this.load();
+                if (Object.keys(this.decks).length === 0) {
+                    this.createSampleDeck();
+                }
+                this.renderDeckList();
+            },
+
+            load() {
+                const saved = localStorage.getItem('flashcards');
+                if (saved) {
+                    this.decks = JSON.parse(saved);
+                }
+            },
+
+            createSampleDeck() {
+                const sampleCards = [
+                    { front: "Andhra Pradesh", back: "Hyderabad", nextReview: Date.now(), flipped: false },
+                    { front: "Arunachal Pradesh", back: "Itanagar", nextReview: Date.now(), flipped: false },
+                    { front: "Assam", back: "Dispur", nextReview: Date.now(), flipped: false },
+                    { front: "Bihar", back: "Patna", nextReview: Date.now(), flipped: false },
+                    { front: "Chhattisgarh", back: "Raipur", nextReview: Date.now(), flipped: false },
+                    { front: "Goa", back: "Panaji", nextReview: Date.now(), flipped: false },
+                    { front: "Gujarat", back: "Gandhinagar", nextReview: Date.now(), flipped: false },
+                    { front: "Haryana", back: "Chandigarh", nextReview: Date.now(), flipped: false },
+                    { front: "Himachal Pradesh", back: "Shimla", nextReview: Date.now(), flipped: false },
+                    { front: "Jharkhand", back: "Ranchi", nextReview: Date.now(), flipped: false },
+                    { front: "Karnataka", back: "Bengaluru", nextReview: Date.now(), flipped: false },
+                    { front: "Kerala", back: "Thiruvananthapuram", nextReview: Date.now(), flipped: false },
+                    { front: "Madhya Pradesh", back: "Bhopal", nextReview: Date.now(), flipped: false },
+                    { front: "Maharashtra", back: "Mumbai", nextReview: Date.now(), flipped: false },
+                    { front: "Manipur", back: "Imphal", nextReview: Date.now(), flipped: false },
+                    { front: "Meghalaya", back: "Shillong", nextReview: Date.now(), flipped: false },
+                    { front: "Mizoram", back: "Aizawl", nextReview: Date.now(), flipped: false },
+                    { front: "Nagaland", back: "Kohima", nextReview: Date.now(), flipped: false },
+                    { front: "Odisha", back: "Bhubaneswar", nextReview: Date.now(), flipped: false },
+                    { front: "Punjab", back: "Chandigarh", nextReview: Date.now(), flipped: false },
+                    { front: "Rajasthan", back: "Jaipur", nextReview: Date.now(), flipped: false },
+                    { front: "Sikkim", back: "Gangtok", nextReview: Date.now(), flipped: false },
+                    { front: "Tamil Nadu", back: "Chennai", nextReview: Date.now(), flipped: false },
+                    { front: "Telangana", back: "Hyderabad", nextReview: Date.now(), flipped: false },
+                    { front: "Tripura", back: "Agartala", nextReview: Date.now(), flipped: false },
+                    { front: "Uttar Pradesh", back: "Lucknow", nextReview: Date.now(), flipped: false },
+                    { front: "Uttarakhand", back: "Dehradun", nextReview: Date.now(), flipped: false },
+                    { front: "West Bengal", back: "Kolkata", nextReview: Date.now(), flipped: false }
+                ];
+
+                const id = 'indian-capitals';
+                this.decks[id] = { name: '🇮🇳 Indian Capitals', cards: sampleCards };
+                this.save();
+            },
+
+            save() {
+                localStorage.setItem('flashcards', JSON.stringify(this.decks));
+            },
+
+            renderDeckList() {
+                const container = document.getElementById('decks');
+                container.innerHTML = '';
+
+                if (Object.keys(this.decks).length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #999; margin-top: 40px;">No decks yet. Create one to get started.</p>';
+                    return;
+                }
+
+                for (const [id, deck] of Object.entries(this.decks)) {
+                    const due = deck.cards.filter(c => c.nextReview <= Date.now()).length;
+                    const el = document.createElement('div');
+                    el.className = 'deck-item';
+                    el.onclick = () => this.openDeck(id);
+                    el.innerHTML = `
+                        <div class="deck-name">${deck.name}</div>
+                        <div class="deck-stats">${deck.cards.length} cards • ${due} due</div>
+                    `;
+                    container.appendChild(el);
+                }
+            },
+
+            openDeck(id) {
+                this.currentDeck = id;
+                this.currentCardIndex = 0;
+                this.showStudyView();
+                this.renderStudyView();
+            },
+
+            showStudyView() {
+                document.querySelector('.deck-list').classList.remove('active');
+                document.querySelector('.study-view').classList.add('active');
+            },
+
+            showDeckList() {
+                document.querySelector('.study-view').classList.remove('active');
+                document.querySelector('.deck-list').classList.add('active');
+            },
+
+            renderStudyView() {
+                const deck = this.decks[this.currentDeck];
+                const due = deck.cards.filter(c => c.nextReview <= Date.now());
+
+                document.getElementById('deckTitle').textContent = deck.name;
+                document.getElementById('cardCount').textContent = `${deck.cards.length} cards`;
+                document.getElementById('dueCount').textContent = `${due.length} due`;
+
+                if (due.length === 0) {
+                    document.getElementById('studyContent').innerHTML = '<div class="stats" style="margin-top: 60px; font-size: 16px;">All caught up! 🎉</div>';
+                    return;
+                }
+
+                this.currentCardIndex = Math.min(this.currentCardIndex, due.length - 1);
+                const card = due[this.currentCardIndex];
+
+                const progress = ((this.currentCardIndex + 1) / due.length) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+
+                const isFlipped = card.flipped;
+                document.getElementById('studyContent').innerHTML = `
+                    <div class="card ${isFlipped ? 'flipped' : ''}" onclick="app.flipCard()">
+                        <div>
+                            <div class="card-label">${isFlipped ? 'Answer' : 'Question'}</div>
+                            <div class="card-content">${isFlipped ? card.back : card.front}</div>
+                        </div>
+                    </div>
+                    ${isFlipped ? `
+                        <div class="buttons">
+                            <button class="btn-danger" onclick="app.rateCard(0)">Hard</button>
+                            <button class="btn-warning" onclick="app.rateCard(1)">Good</button>
+                            <button class="btn-success" onclick="app.rateCard(2)">Easy</button>
+                        </div>
+                    ` : ''}
+                `;
+            },
+
+            flipCard() {
+                const deck = this.decks[this.currentDeck];
+                const due = deck.cards.filter(c => c.nextReview <= Date.now());
+                const card = due[this.currentCardIndex];
+                card.flipped = !card.flipped;
+                this.renderStudyView();
+            },
+
+            rateCard(rating) {
+                const deck = this.decks[this.currentDeck];
+                const due = deck.cards.filter(c => c.nextReview <= Date.now());
+                const card = due[this.currentCardIndex];
+
+                const intervals = [1, 3, 7]; // days
+                const nextReview = Date.now() + intervals[rating] * 24 * 60 * 60 * 1000;
+                card.nextReview = nextReview;
+                card.flipped = false;
+
+                this.save();
+                this.currentCardIndex++;
+                this.renderStudyView();
+            }
+        };
+
+        function showNewDeckModal() {
+            document.getElementById('newDeckModal').classList.add('active');
+            document.getElementById('deckNameInput').focus();
+        }
+
+        function createDeck() {
+            const name = document.getElementById('deckNameInput').value.trim();
+            if (!name) return;
+
+            const id = Date.now().toString();
+            app.decks[id] = { name, cards: [] };
+            app.save();
+            app.renderDeckList();
+            closeModal('newDeckModal');
+            document.getElementById('deckNameInput').value = '';
+        }
+
+        function showNewCardModal() {
+            document.getElementById('newCardModal').classList.add('active');
+            document.getElementById('frontInput').focus();
+        }
+
+        function addCard() {
+            const front = document.getElementById('frontInput').value.trim();
+            const back = document.getElementById('backInput').value.trim();
+            if (!front || !back) return;
+
+            const deck = app.decks[app.currentDeck];
+            deck.cards.push({
+                front,
+                back,
+                nextReview: Date.now(),
+                flipped: false
+            });
+            app.save();
+            app.renderStudyView();
+            closeModal('newCardModal');
+            document.getElementById('frontInput').value = '';
+            document.getElementById('backInput').value = '';
+        }
+
+        function backToDeckList() {
+            app.showDeckList();
+            app.renderDeckList();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            }
+            if (e.key === 'Enter' && document.getElementById('newDeckModal').classList.contains('active')) {
+                createDeck();
+            }
+        });
+
+        app.init();
+    </script>
+</body>
+</html>
