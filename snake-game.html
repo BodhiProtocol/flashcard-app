@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake Game</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --border: #dee2e6;
+      --text-primary: #212529;
+      --text-secondary: #6c757d;
+      --accent: #1D9E75;
+      --accent-light: #5DCAA5;
+      --food: #D85A30;
+      --radius: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --surface: #242424;
+        --border: #3a3a3a;
+        --text-primary: #f0f0f0;
+        --text-secondary: #9a9a9a;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      gap: 1rem;
+    }
+
+    h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
+
+    #scorebar {
+      display: flex;
+      gap: 2rem;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    #scorebar span { color: var(--text-primary); font-weight: 600; font-family: monospace; }
+
+    canvas {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      display: block;
+      max-width: 100%;
+    }
+
+    #msg {
+      font-size: 13px;
+      color: var(--text-secondary);
+      min-height: 1.4em;
+      text-align: center;
+    }
+
+    button {
+      background: var(--surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: var(--border); }
+    button:active { transform: scale(0.97); }
+
+    #restartBtn { display: none; }
+
+    .arrows {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+      gap: 4px;
+    }
+    .arrows button { width: 44px; height: 44px; padding: 0; font-size: 18px; }
+    #btnUp    { grid-column: 2; grid-row: 1; }
+    #btnLeft  { grid-column: 1; grid-row: 2; }
+    #btnDown  { grid-column: 2; grid-row: 2; }
+    #btnRight { grid-column: 3; grid-row: 2; }
+
+    footer {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake</h1>
+
+  <div id="scorebar">
+    Score: <span id="score">0</span>
+    &nbsp;|&nbsp;
+    Best: <span id="best">0</span>
+  </div>
+
+  <canvas id="c" width="400" height="400"></canvas>
+
+  <div id="msg">Press any arrow key to start</div>
+  <button id="restartBtn">Restart</button>
+
+  <div class="arrows" aria-label="Direction controls">
+    <button id="btnUp"    aria-label="Up">↑</button>
+    <button id="btnLeft"  aria-label="Left">←</button>
+    <button id="btnDown"  aria-label="Down">↓</button>
+    <button id="btnRight" aria-label="Right">→</button>
+  </div>
+
+  <footer>Arrow keys or on-screen buttons &nbsp;·&nbsp; No dependencies &nbsp;·&nbsp; Works offline</footer>
+
+  <script>
+    const COLS = 20, ROWS = 20, CELL = 20;
+    const canvas  = document.getElementById('c');
+    const ctx     = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestEl  = document.getElementById('best');
+    const msgEl   = document.getElementById('msg');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let snake, dir, nextDir, food, score, best = 0, running = false, started = false, raf;
+
+    function init() {
+      snake   = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+      dir     = {x:1,y:0};
+      nextDir = {x:1,y:0};
+      score   = 0;
+      running = false;
+      started = false;
+      scoreEl.textContent  = 0;
+      msgEl.textContent    = 'Press any arrow key to start';
+      restartBtn.style.display = 'none';
+      placeFood();
+      draw();
+    }
+
+    function placeFood() {
+      let pos;
+      do {
+        pos = {x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS)};
+      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+      food = pos;
+    }
+
+    function step() {
+      dir = nextDir;
+      const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+      const hitWall = head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS;
+      const hitSelf = snake.some(s => s.x === head.x && s.y === head.y);
+      if (hitWall || hitSelf) { gameOver(); return; }
+
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreEl.textContent = score;
+        if (score > best) { best = score; bestEl.textContent = best; }
+        placeFood();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function draw() {
+      const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      ctx.clearRect(0, 0, 400, 400);
+
+      const gridColor  = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+      const headColor  = '#1D9E75';
+      const bodyColor  = '#5DCAA5';
+      const foodColor  = '#D85A30';
+
+      for (let x = 0; x < COLS; x++) {
+        for (let y = 0; y < ROWS; y++) {
+          ctx.fillStyle = gridColor;
+          ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+        }
+      }
+
+      snake.forEach((s, i) => {
+        ctx.fillStyle = i === 0 ? headColor : bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4, 4);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = foodColor;
+      ctx.beginPath();
+      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    let lastTime = 0;
+    const SPEED = 120;
+
+    function loop(ts) {
+      if (!running) return;
+      if (ts - lastTime >= SPEED) { lastTime = ts; step(); }
+      raf = requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (started) return;
+      started  = true;
+      running  = true;
+      msgEl.textContent = '';
+      lastTime = 0;
+      raf = requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+      running = false;
+      cancelAnimationFrame(raf);
+      msgEl.textContent = `Game over — score: ${score}`;
+      restartBtn.style.display = 'inline-block';
+    }
+
+    const keyMap = {
+      ArrowUp:    {x:0,  y:-1},
+      ArrowDown:  {x:0,  y:1},
+      ArrowLeft:  {x:-1, y:0},
+      ArrowRight: {x:1,  y:0},
+    };
+
+    document.addEventListener('keydown', e => {
+      const d = keyMap[e.key];
+      if (!d) return;
+      e.preventDefault();
+      if (!started) start();
+      if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
+    });
+
+    function tap(dx, dy) {
+      if (!started) start();
+      const d = {x: dx, y: dy};
+      if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
+    }
+
+    document.getElementById('btnUp').addEventListener('click',    () => tap(0, -1));
+    document.getElementById('btnDown').addEventListener('click',  () => tap(0, 1));
+    document.getElementById('btnLeft').addEventListener('click',  () => tap(-1, 0));
+    document.getElementById('btnRight').addEventListener('click', () => tap(1, 0));
+    restartBtn.addEventListener('click', () => { cancelAnimationFrame(raf); init(); });
+
+    init();
+  </script>
+</body>
+</html>

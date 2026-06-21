@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-06-21
+
+### Added
+- Snake game (`snake-game.html`) — classic arcade game with arrow key and on-screen button controls
+- Score tracking with session best score
+- Game-over detection on wall and self-collision
+- Fully offline, zero dependencies, single HTML file
+- Dark mode support via `prefers-color-scheme`
+- Mobile-friendly on-screen directional buttons
+
+---
+
 ## [1.0.0] - 2026-06-20
 
 ### Added

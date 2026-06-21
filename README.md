@@ -257,9 +257,21 @@ Back: Technique of reviewing material at optimal intervals to maximize retention
 
 ---
 
+## 🎮 Apps in This Repository
+
+| File | Description |
+|------|-------------|
+| `capitals-quiz.html` | Flashcard app with spaced repetition for studying capitals |
+| `snake-game.html` | Classic Snake arcade game — arrow keys, score tracking, dark mode |
+
+---
+
 ## 🔄 Version History
 
-**v1.0** (Current)
+**v1.1** (Current)
+- Added Snake game (`snake-game.html`)
+
+**v1.0**
 - Initial release
 - Spaced repetition algorithm
 - Multiple decks support
