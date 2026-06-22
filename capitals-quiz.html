@@ -273,6 +273,7 @@
             <div class="toolbar">
                 <button class="btn-secondary" onclick="backToDeckList()">← Back</button>
                 <button class="btn-secondary" onclick="showNewCardModal()">+ Add Card</button>
+                <button class="btn-primary" onclick="app.restartDeck()">↻ Restart Deck</button>
             </div>
 
             <div class="stats">
@@ -339,7 +340,7 @@
 
             createSampleDeck() {
                 const sampleCards = [
-                    { front: "Andhra Pradesh", back: "Hyderabad", nextReview: 0, flipped: false },
+                    { front: "Andhra Pradesh", back: "Amaravati", nextReview: 0, flipped: false },
                     { front: "Arunachal Pradesh", back: "Itanagar", nextReview: 0, flipped: false },
                     { front: "Assam", back: "Dispur", nextReview: 0, flipped: false },
                     { front: "Bihar", back: "Patna", nextReview: 0, flipped: false },
@@ -426,14 +427,22 @@
                 document.getElementById('dueCount').textContent = `${due.length} due`;
 
                 if (due.length === 0) {
-                    document.getElementById('studyContent').innerHTML = '<div class="stats" style="margin-top: 60px; font-size: 16px;">All caught up! 🎉</div>';
+                    document.getElementById('progressBar').style.width = '100%';
+                    document.getElementById('studyContent').innerHTML = `
+                        <div class="stats" style="margin-top: 60px; font-size: 16px;">
+                            All caught up! 🎉
+                        </div>
+                        <div class="buttons" style="margin-top: 20px;">
+                            <button class="btn-primary" onclick="app.restartDeck()">↻ Restart Deck</button>
+                        </div>
+                    `;
                     return;
                 }
 
                 this.currentCardIndex = Math.min(this.currentCardIndex, due.length - 1);
                 const card = due[this.currentCardIndex];
 
-                const progress = ((this.currentCardIndex + 1) / due.length) * 100;
+                const progress = (this.currentCardIndex / due.length) * 100;
                 document.getElementById('progressBar').style.width = progress + '%';
 
                 const isFlipped = card.flipped;
@@ -474,6 +483,23 @@
 
                 this.save();
                 this.currentCardIndex++;
+                this.renderStudyView();
+            },
+
+            restartDeck() {
+                if (!this.currentDeck) return;
+
+                const deck = this.decks[this.currentDeck];
+                if (!deck || !deck.cards) return;
+
+                deck.cards.forEach(card => {
+                    card.nextReview = Date.now();
+                    card.flipped = false;
+                });
+
+                this.currentCardIndex = 0;
+                document.getElementById('progressBar').style.width = '0%';
+                this.save();
                 this.renderStudyView();
             }
         };
