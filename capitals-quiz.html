@@ -335,6 +335,17 @@
                 const saved = localStorage.getItem('flashcards');
                 if (saved) {
                     this.decks = JSON.parse(saved);
+
+                    // Fix Andhra Pradesh capital in existing saved deck
+                    const deck = this.decks['indian-capitals'];
+                    if (deck && deck.cards) {
+                        const apCard = deck.cards.find(card => card.front === "Andhra Pradesh");
+                        if (apCard) {
+                            apCard.back = "Amaravati";
+                        }
+                    }
+
+                    this.save();
                 }
             },
 
